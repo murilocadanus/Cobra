@@ -36,6 +36,8 @@ class PlayState extends FlxState
 	private var _player2CurrentDirection = FlxObject.DOWN;
 	private var _player2NextDirection:Int = FlxObject.DOWN;
 
+	private var _gameOverState:GameOverState = new GameOverState();
+
 	private var _fruit:FlxSprite;
 
 	override public function create():Void
@@ -109,11 +111,38 @@ class PlayState extends FlxState
 	{
 		super.update(elapsed);
 
-		// Check if player 1 collected a fruit
-		FlxG.overlap(_player1Head, _fruit, player1EatFruit);
+		// Check end game
+		if(!_player1Head.alive && !_player2Head.alive)
+		{
+			_gameOverState.setPlayer1FinalScore(_player1Score);
+			_gameOverState.setPlayer2FinalScore(_player2Score);
+			FlxG.switchState(_gameOverState);
+		}
 
-		// Check if player 2 collected a fruit
-		FlxG.overlap(_player2Head, _fruit, player2EatFruit);
+		if(_player1Head.alive)
+		{
+			// Check if player 1 collected a fruit
+			FlxG.overlap(_player1Head, _fruit, player1EatFruit);
+
+			// Check if player1 collided with yourself
+			FlxG.overlap(_player1Head, _player1Body, gameOverPlayer1);
+			FlxG.overlap(_player1Head, _player2Body, gameOverPlayer1);
+
+			// Set game over case player go out of the screen
+			if (!_player1Head.isOnScreen()) gameOverPlayer1();
+		}
+
+		if(_player2Head.alive)
+		{
+			// Check if player 2 collected a fruit
+			FlxG.overlap(_player2Head, _fruit, player2EatFruit);
+
+			// Check if player2 collided with yourself
+			FlxG.overlap(_player2Head, _player2Body, gameOverPlayer2);
+			FlxG.overlap(_player2Head, _player1Body, gameOverPlayer2);
+
+			if (!_player2Head.isOnScreen()) gameOverPlayer2();
+		}
 
 		// WASD keys controls player 1
 		if (FlxG.keys.pressed.W && _player1CurrentDirection != FlxObject.DOWN)
@@ -185,8 +214,6 @@ class PlayState extends FlxState
 				_player1Head.y += BLOCK_SIZE;
 		}
 		_player1CurrentDirection = _player1NextDirection;
-
-		FlxSpriteUtil.screenWrap(_player1Head);
 		
 		for (i in 0..._player1HeadPositions.length)
 		{
@@ -214,8 +241,6 @@ class PlayState extends FlxState
 				_player2Head.y += BLOCK_SIZE;
 		}
 		_player2CurrentDirection = _player2NextDirection;
-
-		FlxSpriteUtil.screenWrap(_player2Head);
 
 		for (i in 0..._player2HeadPositions.length)
 		{
@@ -289,7 +314,28 @@ class PlayState extends FlxState
 		_fruit.x = FlxG.random.int(0, Math.floor(FlxG.width / 8) - 1) * 8;
 		_fruit.y = FlxG.random.int(0, Math.floor(FlxG.height / 8) - 1) * 8;
 		
-		// Check that the coordinates we picked aren't already covering the snake, if they are then run this function again
-		FlxG.overlap(_fruit, _player1Head, spawnFruit);
+		// Check if coordenates aren't over player 1 body
+		FlxG.overlap(_fruit, _player1Body, spawnFruit);
+
+		// Check if coordenates aren't over player 2 body
+		FlxG.overlap(_fruit, _player2Body, spawnFruit);
+	}
+
+	private function gameOverPlayer1(?Object1:FlxObject, ?Object2:FlxObject):Void
+	{
+		// Player the sound only if the other player is alive
+		if(_player2Head.alive)
+			FlxG.sound.play("assets/sounds/flixel.wav");
+
+		_player1Head.alive = false;
+	}
+
+	private function gameOverPlayer2(?Object1:FlxObject, ?Object2:FlxObject):Void
+	{
+		// Player the sound only if the other player is alive
+		if(_player1Head.alive)
+			FlxG.sound.play("assets/sounds/flixel.wav");
+
+		_player2Head.alive = false;
 	}
 }
