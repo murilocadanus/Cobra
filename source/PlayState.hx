@@ -10,6 +10,7 @@ import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxTimer;
 import flixel.system.FlxAssets;
 import flixel.group.FlxSpriteGroup;
+import flixel.math.FlxPoint;
 
 class PlayState extends FlxState
 {
@@ -21,6 +22,7 @@ class PlayState extends FlxState
 
 	private var _player1Score:Int = 0;
 	private var _player1ScoreText:FlxText;
+	private var _player1HeadPositions:Array<FlxPoint>;
 	private var _player1Head:FlxSprite;
 	private var _player1Body:FlxSpriteGroup;
 	private var _player1CurrentDirection = FlxObject.UP;
@@ -28,6 +30,7 @@ class PlayState extends FlxState
 
 	private var _player2Score:Int = 0;
 	private var _player2ScoreText:FlxText;
+	private var _player2HeadPositions:Array<FlxPoint>;
 	private var _player2Head:FlxSprite;
 	private var _player2Body:FlxSpriteGroup;
 	private var _player2CurrentDirection = FlxObject.DOWN;
@@ -57,16 +60,36 @@ class PlayState extends FlxState
 		_player1Head.makeGraphic(BLOCK_SIZE - 2, BLOCK_SIZE - 2, FlxColor.CYAN);
 		centerSprite(_player1Head);
 
+		// Head tracker used to update body units
+		_player1HeadPositions = [FlxPoint.get(_player1Head.x, _player1Head.y)];
+
 		// Add player 1 snake head to the board
 		add(_player1Head);
+
+		// Create snake body for player 1
+		_player1Body = new FlxSpriteGroup();
+		add(_player1Body);
+
+		// Increase 3x body units in player 1
+		for (i in 0...3) { increasePlayer1Unit(); movePlayer1(); }
 
 		// Create the sprite of player2
 		_player2Head = new FlxSprite((FlxG.width - screenMiddleX / 2) - BLOCK_SIZE * 2, screenMiddleY);
 		_player2Head.makeGraphic(BLOCK_SIZE - 2, BLOCK_SIZE - 2, FlxColor.GREEN);
 		centerSprite(_player2Head);
 
+		// Head tracker used to update body units
+		_player2HeadPositions = [FlxPoint.get(_player2Head.x, _player2Head.y)];
+
 		// Add player 2 snake head to the board
 		add(_player2Head);
+
+		// Create snake body for player 2
+		_player2Body = new FlxSpriteGroup();
+		add(_player2Body);
+
+		// Increase 3x body units in player 2
+		for (i in 0...3) { increasePlayer2Unit(); movePlayer2(); }
 
 		// Create a collectable fruit
 		_fruit = new FlxSprite();
@@ -74,9 +97,6 @@ class PlayState extends FlxState
 		spawnFruit();
 		centerSprite(_fruit);
 		add(_fruit);
-
-		// Start to move player 1
-		movePlayer1();
 
 		// Start to move player 2
 		movePlayer2();
@@ -147,6 +167,11 @@ class PlayState extends FlxState
 
 	private function movePlayer1():Void
 	{
+		_player1HeadPositions.unshift(FlxPoint.get(_player1Head.x, _player1Head.y));
+		
+		if (_player1HeadPositions.length > _player1Body.members.length)
+			_player1HeadPositions.pop();
+
 		// Update player 1 position
 		switch (_player1NextDirection)
 		{
@@ -162,10 +187,20 @@ class PlayState extends FlxState
 		_player1CurrentDirection = _player1NextDirection;
 
 		FlxSpriteUtil.screenWrap(_player1Head);
+		
+		for (i in 0..._player1HeadPositions.length)
+		{
+			_player1Body.members[i].setPosition(_player1HeadPositions[i].x, _player1HeadPositions[i].y);
+		}
 	}
 
 	private function movePlayer2():Void
 	{
+		_player2HeadPositions.unshift(FlxPoint.get(_player2Head.x, _player2Head.y));
+		
+		if (_player2HeadPositions.length > _player2Body.members.length)
+			_player2HeadPositions.pop();
+
 		// Update player 2 position
 		switch (_player2NextDirection)
 		{
@@ -181,6 +216,11 @@ class PlayState extends FlxState
 		_player2CurrentDirection = _player2NextDirection;
 
 		FlxSpriteUtil.screenWrap(_player2Head);
+
+		for (i in 0..._player2HeadPositions.length)
+		{
+			_player2Body.members[i].setPosition(_player2HeadPositions[i].x, _player2HeadPositions[i].y);
+		}
 	}
 
 	private function player1EatFruit(Snake:FlxObject, Fruit:FlxObject):Void
@@ -192,7 +232,8 @@ class PlayState extends FlxState
 		// Play a sound
 		FlxG.sound.load(FlxAssets.getSound("flixel/sounds/beep")).play();
 		
-		// TODO: grow the snake
+		// Increase the size of snake
+		increasePlayer1Unit();
 		
 		// Become faster each pickup - set a max speed though!
 		if (_movementInterval >= MIN_INTERVAL)
@@ -213,7 +254,8 @@ class PlayState extends FlxState
 		// Play a sound
 		FlxG.sound.load(FlxAssets.getSound("flixel/sounds/beep")).play();
 
-		// TODO: grow the snake
+		// Increase the size of snake
+		increasePlayer2Unit();
 		
 		// Become faster each pickup - set a max speed though!
 		if (_movementInterval >= MIN_INTERVAL)
@@ -229,8 +271,16 @@ class PlayState extends FlxState
 	{
 		// Increase snake unit
 		var snakeUnit:FlxSprite = new FlxSprite(-20, -20);
-		segment.makeGraphic(BLOCK_SIZE - 2, BLOCK_SIZE - 2, FlxColor.GREEN); 
-		_snakeBody.add(segment);
+		snakeUnit.makeGraphic(BLOCK_SIZE - 2, BLOCK_SIZE - 2, FlxColor.CYAN); 
+		_player1Body.add(snakeUnit);
+	}
+
+	private function increasePlayer2Unit():Void
+	{
+		// Increase snake unit
+		var snakeUnit:FlxSprite = new FlxSprite(-20, -20);
+		snakeUnit.makeGraphic(BLOCK_SIZE - 2, BLOCK_SIZE - 2, FlxColor.GREEN); 
+		_player2Body.add(snakeUnit);
 	}
 
 	private function spawnFruit(?fruitPos:FlxObject, ?playerPos:FlxObject):Void
