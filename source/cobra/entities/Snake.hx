@@ -73,7 +73,14 @@ class Snake extends FlxSprite
 
 		else if (FlxG.keys.anyPressed([_keyRight]) && _currentDirection != FlxObject.LEFT)
 			_nextDirection = FlxObject.RIGHT;
-            
+
+        // Check this is not dead yet
+        if(this.alive)
+        {
+        	// Set game over case this go out of the screen
+			if (!this.isOnScreen())
+                die();
+        }
     }
 
 	private function grown():Void
@@ -113,11 +120,22 @@ class Snake extends FlxSprite
 		_score += 10;
 		
 		// Play a sound
-		FlxG.sound.load(FlxAssets.getSound("flixel/sounds/beep")).play();
+		FlxG.sound.load(FlxAssets.getSound("flixel/sounds/flixel")).play();
 		
 		// Increase the size of snake
 		grown();
 	}
+
+    public function die(?Object1:FlxObject, ?Object2:FlxObject):Void
+    {
+		// Kill the snake
+        this.alive = false;
+		this.kill();
+		_body.kill();
+
+        // Play a sound
+		FlxG.sound.load(FlxAssets.getSound("flixel/sounds/beep")).play();
+    }
 
     public function getBody():FlxSpriteGroup
 	{
