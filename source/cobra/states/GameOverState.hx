@@ -1,4 +1,4 @@
-package;
+package cobra.states;
 
 import flixel.FlxState;
 import flixel.text.FlxText;
